@@ -1,0 +1,12 @@
+{
+  "appId": "com.weighttime.journal",
+  "appName": "Weight Time",
+  "webDir": "www",
+  "backgroundColor": "#f3f0e8",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f3f0e8",
+    "preferredContentMode": "mobile",
+    "scrollEnabled": true
+  }
+}

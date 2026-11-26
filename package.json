@@ -1,0 +1,22 @@
+{
+  "name": "weight-time-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "体重时光 iOS app (Capacitor)",
+  "scripts": {
+    "sync:ios": "cap sync ios",
+    "open:ios": "cap open ios",
+    "assets:ios": "capacitor-assets generate --ios",
+    "build:ipa": "bash scripts/build-unsigned-ipa.sh"
+  },
+  "dependencies": {
+    "@capacitor/core": "7.6.11",
+    "@capacitor/filesystem": "7.1.9",
+    "@capacitor/ios": "7.6.11",
+    "@capacitor/share": "7.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "4.0.0",
+    "@capacitor/cli": "7.6.11"
+  }
+}

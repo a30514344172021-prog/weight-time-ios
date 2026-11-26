@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173a2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="体重时光">
+<title>体重时光 · 记录每一次改变</title>
+<script>
+  if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) {
+    document.documentElement.classList.add('native-app');
+  }
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23173a2b'/%3E%3Cpath d='M32 14c8 7 13 13 13 20a13 13 0 0 1-26 0c0-7 5-13 13-20Z' fill='%23d7ef9f'/%3E%3Cpath d='M24 36c5-2 11-2 16 0' fill='none' stroke='%23173a2b' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f3f0e8;
+    --surface:#fffdf8;
+    --surface-2:#f7f4ec;
+    --ink:#1b2a23;
+    --muted:#6f7a72;
+    --line:rgba(27,42,35,.1);
+    --line-strong:rgba(27,42,35,.16);
+    --green:#20543c;
+    --green-2:#2e6b4d;
+    --green-soft:#e8f1e7;
+    --lime:#d7ef9f;
+    --amber:#a96827;
+    --amber-soft:#faecd7;
+    --red:#a8443a;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --font:"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI","Microsoft YaHei",-apple-system,BlinkMacSystemFont,sans-serif;
+    --shadow:0 24px 60px -34px rgba(27,42,35,.34);
+    --radius:26px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  html{-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    min-height:100vh;min-height:100dvh;
+  }
+  html.native-app body{
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background-image:radial-gradient(rgba(27,42,35,.055) .7px,transparent .7px);
+    background-size:20px 20px;
+    opacity:.5;
+  }
+  body.modal-open{overflow:hidden}
+  button,input,textarea,select{font:inherit;color:inherit}
+  button{cursor:pointer}
+  img{max-width:100%}
+  ::selection{background:var(--lime);color:#173a2b}
+  :focus-visible{outline:2px solid var(--green-2);outline-offset:3px}
+  .icon{width:18px;height:18px;display:block;flex:none}
+  [hidden]{display:none !important}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    max-width:1260px;margin:0 auto;padding:24px 30px 16px;
+    display:flex;align-items:center;justify-content:space-between;gap:18px;
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .brand-mark{
+    width:42px;height:42px;border-radius:14px;background:var(--green);color:var(--lime);
+    display:grid;place-items:center;flex:none;box-shadow:0 8px 18px -10px rgba(32,84,60,.65);
+  }
+  .brand-mark .icon{width:24px;height:24px}
+  .brand-kicker{font-size:9px;line-height:1;letter-spacing:.24em;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px}
+  .brand-name{font-size:18px;line-height:1;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+  .top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    border:1px solid transparent;border-radius:999px;background:transparent;
+    padding:10px 16px;font-size:12.5px;font-weight:600;line-height:1;color:var(--ink);
+    transition:background .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease,opacity .18s ease;
+    white-space:nowrap;
+  }
+  .btn .icon{width:16px;height:16px}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn.ghost{border-color:var(--line);background:rgba(255,253,248,.5);color:var(--ink)}
+  .btn.ghost:hover{background:var(--surface);border-color:var(--line-strong)}
+  .btn.primary{background:var(--green);color:#fbfaf3;box-shadow:0 12px 24px -14px rgba(32,84,60,.8)}
+  .btn.primary:hover{background:#183f2d;box-shadow:0 16px 28px -14px rgba(32,84,60,.85)}
+  .btn.danger{background:var(--red);color:#fff}
+  .btn.danger:hover{background:#8d382f}
+  .btn.soft{background:var(--surface-2);border-color:var(--line)}
+  .btn:disabled{opacity:.42;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn.small{padding:8px 13px;font-size:12px}
+
+  /* ---------- page / hero ---------- */
+  .page{max-width:1260px;margin:0 auto;padding:0 30px 56px}
+  .notice{
+    display:flex;align-items:flex-start;gap:9px;margin:0 0 14px;padding:11px 14px;
+    border:1px solid #ead6ae;background:#fbf1dc;color:#7b5522;border-radius:13px;font-size:12px;line-height:1.55;
+  }
+  .notice .icon{width:16px;height:16px;margin-top:1px}
+  .hero{
+    position:relative;overflow:hidden;border-radius:32px;color:#f7f4e9;
+    background:linear-gradient(145deg,#143828 0%,#1b4633 52%,#24543d 100%);
+    padding:36px 38px;display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+    gap:34px;align-items:stretch;
+    box-shadow:0 34px 70px -38px rgba(16,45,31,.8),inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .hero::before{
+    content:"";position:absolute;right:-150px;top:-230px;width:560px;height:560px;border-radius:50%;
+    background:radial-gradient(circle,rgba(215,239,159,.2),rgba(215,239,159,.04) 52%,transparent 70%);
+    pointer-events:none;
+  }
+  .hero::after{
+    content:"";position:absolute;left:-120px;bottom:-260px;width:480px;height:480px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,.06),transparent 68%);pointer-events:none;
+  }
+  .hero-copy{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;min-width:0}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:9px;font-size:10px;line-height:1;
+    letter-spacing:.2em;font-weight:700;text-transform:uppercase;color:var(--muted);
+  }
+  .eyebrow::before{content:"";width:22px;height:1px;background:currentColor;opacity:.55}
+  .hero .eyebrow{color:rgba(247,244,233,.58)}
+  .current-line{display:flex;align-items:baseline;gap:10px;margin:25px 0 12px;min-height:1em}
+  .current-weight{
+    font-family:var(--serif);font-size:clamp(68px,8vw,102px);line-height:.82;
+    letter-spacing:-.055em;font-weight:500;font-variant-numeric:tabular-nums;
+  }
+  .current-unit{font-size:16px;letter-spacing:.12em;opacity:.55;font-weight:600;transform:translateY(-6px)}
+  .hero-sub{font-size:12.5px;color:rgba(247,244,233,.62);line-height:1.6;margin:0}
+  .hero-sub strong{color:rgba(247,244,233,.9);font-weight:600}
+  .hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:27px}
+  .stat-chip{
+    min-width:92px;padding:10px 13px;border-radius:14px;
+    background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.11);
+  }
+  .stat-label{display:block;font-size:9.5px;letter-spacing:.08em;color:rgba(247,244,233,.48);margin-bottom:5px;white-space:nowrap}
+  .stat-value{font-size:13.5px;font-weight:650;letter-spacing:.01em;color:#f7f4e9;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stat-value.down{color:var(--lime)}
+  .stat-value.up{color:#f6c88e}
+  .stat-value.same,.stat-value.neutral{color:rgba(247,244,233,.78)}
+  .hero-chart{
+    position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;
+    background:rgba(255,255,255,.052);border:1px solid rgba(255,255,255,.115);
+    border-radius:22px;padding:17px 17px 10px;backdrop-filter:blur(8px);
+  }
+  .chart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+  .chart-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:650;color:rgba(247,244,233,.7)}
+  .range-switch{display:inline-flex;background:rgba(0,0,0,.17);border-radius:999px;padding:3px}
+  .range-btn{
+    border:0;background:transparent;color:rgba(247,244,233,.48);border-radius:999px;
+    padding:5px 9px;font-size:10px;font-weight:600;line-height:1;transition:.18s;
+  }
+  .range-btn[aria-pressed="true"]{background:rgba(247,244,233,.14);color:#f7f4e9}
+  .range-btn:hover{color:#f7f4e9}
+  .chart-wrap{position:relative;flex:1;min-height:210px;display:flex;align-items:center}
+  #chartSvg{display:block;width:100%;height:auto;overflow:visible}
+  .chart-grid{stroke:rgba(255,255,255,.105);stroke-width:1;stroke-dasharray:3 6}
+  .chart-axis{fill:rgba(247,244,233,.42);font-size:10.5px;font-family:var(--font);font-variant-numeric:tabular-nums}
+  .chart-line{fill:none;stroke:var(--lime);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 8px rgba(215,239,159,.28))}
+  .chart-area{fill:url(#chartArea)}
+  .chart-dot{fill:var(--lime);stroke:#1a412f;stroke-width:3}
+  .chart-dot-latest{fill:#f7f4e9;stroke:var(--lime);stroke-width:3}
+  .chart-hit{fill:transparent;cursor:pointer;outline:none}
+  .chart-hit:focus-visible{stroke:rgba(215,239,159,.7);stroke-width:1.5;stroke-dasharray:2 3}
+  .chart-empty{
+    width:100%;height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;color:rgba(247,244,233,.5);text-align:center;font-size:11.5px;line-height:1.65;
+  }
+  .chart-empty .icon{width:28px;height:28px;opacity:.55}
+  .chart-tooltip{
+    position:absolute;z-index:6;pointer-events:none;transform:translate(-50%,-115%);
+    background:#fdfbf4;color:var(--ink);border-radius:11px;padding:8px 11px;
+    box-shadow:0 14px 30px -12px rgba(0,0,0,.45);white-space:nowrap;font-size:10.5px;line-height:1.4;
+    transition:opacity .12s ease;
+  }
+  .chart-tooltip strong{font-family:var(--serif);font-size:15px;font-weight:600;letter-spacing:-.02em}
+  .chart-tooltip span{display:block;color:var(--muted);font-size:9.5px;margin-top:1px}
+
+  /* ---------- layout ---------- */
+  .content-grid{
+    display:grid;grid-template-columns:minmax(0,1fr) 352px;gap:26px;
+    align-items:start;margin-top:46px;
+  }
+  .gallery-column{min-width:0}
+  .section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;min-height:34px}
+  .section-title-wrap{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .section-heading h2{font-size:24px;font-weight:650;letter-spacing:-.03em;margin:0;line-height:1.1}
+  .section-sub{font-size:11px;color:var(--muted);margin:4px 0 0;line-height:1.5}
+  .count-badge{
+    display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:22px;padding:0 8px;
+    border-radius:999px;background:var(--green-soft);color:var(--green);font-size:10.5px;font-weight:700;
+  }
+  .gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:18px}
+  .entry-card{
+    appearance:none;display:block;width:100%;padding:0;text-align:left;overflow:hidden;cursor:pointer;
+    color:inherit;font:inherit;
+    border:1px solid var(--line);border-radius:19px;background:var(--surface);
+    box-shadow:0 12px 28px -26px rgba(27,42,35,.4);
+    transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
+    animation:card-in .42s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .entry-card:hover{transform:translateY(-4px);border-color:rgba(32,84,60,.22);box-shadow:0 24px 46px -28px rgba(27,42,35,.44)}
+  .entry-card:active{transform:translateY(-1px)}
+  @keyframes card-in{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+  .entry-photo{position:relative;aspect-ratio:4/5;overflow:hidden;background:linear-gradient(150deg,#e8e4d8,#d9d5c8)}
+  .entry-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+  .entry-card:hover .entry-photo img{transform:scale(1.035)}
+  .photo-shade{
+    position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(to top,rgba(13,29,21,.72) 0%,rgba(13,29,21,.13) 40%,transparent 62%);
+  }
+  .photo-weight{position:absolute;left:14px;bottom:12px;color:#fff;z-index:2;display:flex;align-items:baseline;gap:4px}
+  .photo-weight b{font-family:var(--serif);font-size:28px;line-height:1;font-weight:500;letter-spacing:-.035em;text-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .photo-weight small{font-size:10px;opacity:.8;font-weight:600;letter-spacing:.06em}
+  .photo-date{position:absolute;right:13px;bottom:14px;z-index:2;color:rgba(255,255,255,.86);font-size:10px;letter-spacing:.02em;text-shadow:0 1px 8px rgba(0,0,0,.3)}
+  .delta-badge{
+    position:absolute;left:11px;top:11px;z-index:2;display:inline-flex;align-items:center;gap:3px;
+    padding:5px 8px;border-radius:999px;font-size:10px;font-weight:700;line-height:1;
+    background:rgba(255,253,248,.9);color:var(--muted);backdrop-filter:blur(6px);
+    box-shadow:0 4px 12px -6px rgba(0,0,0,.28);
+  }
+  .delta-badge.down{color:var(--green);background:rgba(232,245,225,.94)}
+  .delta-badge.up{color:var(--amber);background:rgba(252,238,215,.94)}
+  .photo-placeholder{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+    color:rgba(32,84,60,.42);background:
+      radial-gradient(circle at 32% 22%,rgba(255,255,255,.75),transparent 52%),
+      linear-gradient(155deg,#ece8dc,#ded9ca);
+  }
+  .photo-placeholder .icon{width:30px;height:30px;opacity:.7}
+  .photo-placeholder span{font-size:9.5px;letter-spacing:.05em}
+  .entry-body{padding:12px 14px 13px}
+  .entry-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .entry-date{font-size:12px;font-weight:700;letter-spacing:.01em}
+  .entry-time{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .entry-note{
+    margin:6px 0 0;font-size:11px;line-height:1.5;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:16px;
+  }
+  .entry-upload{
+    display:flex;align-items:center;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
+    font-size:9.5px;color:#8a938c;line-height:1.4;
+  }
+  .entry-upload .icon{width:11px;height:11px;opacity:.75}
+
+  /* ---------- empty state ---------- */
+  .empty-state{
+    grid-column:1/-1;border:1px dashed rgba(32,84,60,.25);border-radius:24px;
+    padding:52px 24px 48px;text-align:center;background:rgba(255,253,248,.55);
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .empty-icon{
+    width:62px;height:62px;border-radius:50%;display:grid;place-items:center;margin-bottom:16px;
+    background:var(--green-soft);color:var(--green);box-shadow:0 0 0 9px rgba(232,241,231,.5);
+  }
+  .empty-icon .icon{width:27px;height:27px}
+  .empty-state h3{margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em}
+  .empty-state p{margin:7px 0 18px;font-size:11.5px;line-height:1.7;color:var(--muted);max-width:300px}
+
+  /* ---------- compare ---------- */
+  .compare-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:24px;
+    padding:18px;box-shadow:var(--shadow);position:sticky;top:22px;
+  }
+  .compare-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .compare-title{font-size:15px;font-weight:700;letter-spacing:-.01em;margin:0;display:flex;align-items:center;gap:7px}
+  .compare-title .icon{width:17px;height:17px;color:var(--green)}
+  .compare-kicker{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:3px 0 0 24px}
+  .icon-btn{
+    width:31px;height:31px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);
+    display:inline-flex;align-items:center;justify-content:center;color:var(--muted);transition:.18s;flex:none;
+  }
+  .icon-btn:hover{background:var(--green-soft);color:var(--green);border-color:rgba(32,84,60,.18);transform:rotate(180deg)}
+  .icon-btn .icon{width:14px;height:14px}
+  .compare-stage{
+    --split:55%;position:relative;aspect-ratio:3/4;margin-top:14px;border-radius:17px;overflow:hidden;
+    background:linear-gradient(150deg,#e9e5d9,#dcd7c8);isolation:isolate;
+  }
+  .compare-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .cmp-b{clip-path:inset(0 0 0 var(--split));z-index:2}
+  .cmp-handle{
+    position:absolute;top:0;bottom:0;left:var(--split);width:2px;background:rgba(255,255,255,.92);
+    z-index:4;transform:translateX(-1px);pointer-events:none;
+    box-shadow:0 0 0 .5px rgba(20,40,30,.15),0 0 24px rgba(0,0,0,.25);
+  }
+  .cmp-handle::after{
+    content:"";position:absolute;top:50%;left:50%;width:38px;height:38px;border-radius:50%;
+    transform:translate(-50%,-50%);background:rgba(255,255,255,.95);
+    box-shadow:0 8px 20px -6px rgba(0,0,0,.35);
+  }
+  .handle-arrows{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-53%);z-index:1;
+    font-size:15px;letter-spacing:1px;color:var(--green);font-weight:700;line-height:1;pointer-events:none;
+  }
+  .compare-range{
+    position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;z-index:6;cursor:ew-resize;
+  }
+  .cmp-tag{
+    position:absolute;top:11px;z-index:3;max-width:46%;padding:5px 8px;border-radius:999px;
+    background:rgba(15,33,24,.66);color:#fff;font-size:9px;line-height:1.2;letter-spacing:.01em;
+    backdrop-filter:blur(7px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .cmp-tag.a{left:11px}
+  .cmp-tag.b{right:11px}
+  .compare-stage.single .cmp-b,.compare-stage.single .cmp-handle,.compare-stage.single .compare-range,.compare-stage.single .cmp-tag.b{display:none}
+  .compare-stage.single .cmp-tag.a{right:11px;left:auto;max-width:70%}
+  .compare-placeholder{
+    position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:26px;gap:10px;color:var(--muted);
+  }
+  .compare-placeholder .icon{width:31px;height:31px;color:rgba(32,84,60,.48)}
+  .compare-placeholder strong{font-size:12.5px;color:var(--ink);font-weight:650}
+  .compare-placeholder span{font-size:10.5px;line-height:1.6;max-width:190px}
+  .compare-selects{display:grid;grid-template-columns:minmax(0,1fr) 31px minmax(0,1fr);gap:7px;align-items:end;margin-top:13px}
+  .select-wrap{min-width:0}
+  .select-wrap label{display:block;font-size:9px;letter-spacing:.08em;color:var(--muted);font-weight:650;margin-bottom:5px}
+  .select-wrap select{
+    width:100%;appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--surface-2);
+    border-radius:10px;padding:8px 24px 8px 9px;font-size:10.5px;font-weight:600;color:var(--ink);cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='m2.5 4.5 3.5 3 3.5-3' fill='none' stroke='%236f7a72' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 7px center;background-size:11px;
+    text-overflow:ellipsis;
+  }
+  .swap-btn{width:31px;height:31px;margin-bottom:1px;border-radius:9px}
+  .swap-btn:hover{transform:rotate(180deg)}
+  .compare-delta{margin-top:15px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+  .compare-delta-label{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px}
+  #cmpDelta{font-family:var(--serif);font-size:30px;line-height:1;font-weight:500;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+  #cmpDelta.down{color:var(--green)}
+  #cmpDelta.up{color:var(--amber)}
+  #cmpDelta.same{color:var(--muted)}
+  .compare-meta{text-align:right;font-size:10px;color:var(--muted);line-height:1.5;padding-bottom:2px}
+  .compare-note{margin:9px 0 0;font-size:9.5px;line-height:1.6;color:#8a938c;text-align:center}
+
+  /* ---------- footer ---------- */
+  .footer{
+    margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    font-size:10.5px;color:#8a938c;line-height:1.6;
+  }
+  .footer-left{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .footer .icon{width:13px;height:13px}
+  .footer-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .text-btn{border:0;background:none;padding:0;font-size:10.5px;color:#8a938c;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(138,147,140,.35)}
+  .text-btn:hover{color:var(--red)}
+  .backup-state{display:inline-flex;align-items:center;gap:5px}
+  .backup-dot{width:5px;height:5px;border-radius:50%;background:#b9b1a0}
+  .backup-dot.warn{background:#d29a4a}
+
+  /* ---------- modals ---------- */
+  .modal{
+    position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+    padding:24px;overflow:hidden;
+  }
+  .modal-backdrop{
+    position:absolute;inset:0;background:rgba(12,24,18,.58);backdrop-filter:blur(9px);
+    opacity:0;transition:opacity .25s ease;
+  }
+  .modal.is-open .modal-backdrop{opacity:1}
+  .sheet{
+    position:relative;z-index:2;width:100%;max-width:880px;max-height:calc(100vh - 48px);
+    overflow:auto;overscroll-behavior:contain;background:var(--surface);border-radius:28px;
+    box-shadow:0 45px 100px -30px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.7);
+    opacity:0;transform:translateY(16px) scale(.985);
+    transition:opacity .25s ease,transform .25s cubic-bezier(.2,.8,.2,1);
+    scrollbar-width:thin;scrollbar-color:#cfc9bb transparent;
+  }
+  .modal.is-open .sheet{opacity:1;transform:translateY(0) scale(1)}
+  .sheet:focus{outline:none}
+  .sheet::-webkit-scrollbar{width:9px}
+  .sheet::-webkit-scrollbar-thumb{background:#d7d1c4;border-radius:8px;border:3px solid var(--surface)}
+  .modal-close{
+    position:absolute;right:18px;top:18px;z-index:5;width:34px;height:34px;border-radius:50%;
+    border:1px solid var(--line);background:rgba(247,244,236,.9);color:var(--muted);
+    display:inline-flex;align-items:center;justify-content:center;transition:.18s;backdrop-filter:blur(5px);
+  }
+  .modal-close:hover{background:var(--green-soft);color:var(--green);transform:rotate(90deg)}
+  .modal-close .icon{width:15px;height:15px}
+  .sheet-head{padding:28px 34px 0}
+  .sheet-head .eyebrow{color:var(--muted)}
+  .sheet-head h2{font-size:26px;line-height:1.15;letter-spacing:-.035em;font-weight:650;margin:11px 0 5px}
+  .sheet-head p{font-size:11.5px;line-height:1.65;color:var(--muted);margin:0;max-width:480px}
+  .entry-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:30px;padding:22px 34px 32px}
+  .photo-col{min-width:0}
+  .photo-drop{
+    position:relative;aspect-ratio:4/5;border-radius:20px;border:1.5px dashed rgba(32,84,60,.27);
+    background:linear-gradient(150deg,#f1eee5,#e9e5d9);overflow:hidden;cursor:pointer;
+    transition:border-color .18s,background .18s,box-shadow .18s;
+  }
+  .photo-drop:hover,.photo-drop.dragover{border-color:var(--green-2);background:linear-gradient(150deg,#edf3e7,#e4ecdc);box-shadow:inset 0 0 0 3px rgba(32,84,60,.05)}
+  .photo-drop.has-photo{border-style:solid;border-color:transparent;background:#ddd8ca}
+  .photo-drop > img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  .photo-empty{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:9px;text-align:center;padding:24px;color:var(--muted);
+  }
+  .camera-badge{
+    width:50px;height:50px;border-radius:50%;display:grid;place-items:center;background:var(--surface);
+    color:var(--green);box-shadow:0 8px 20px -10px rgba(32,84,60,.4);margin-bottom:4px;
+  }
+  .camera-badge .icon{width:22px;height:22px}
+  .photo-empty strong{font-size:12px;color:var(--ink);font-weight:650}
+  .photo-empty span{font-size:10px;line-height:1.6;color:#8a938c;max-width:180px}
+  .photo-actions{
+    position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;gap:7px;padding:10px;
+    background:linear-gradient(to top,rgba(15,29,21,.62),transparent);
+  }
+  .photo-action{
+    flex:1;border:1px solid rgba(255,255,255,.35);background:rgba(20,35,27,.5);color:#fff;
+    border-radius:8px;padding:7px 6px;font-size:10px;backdrop-filter:blur(7px);transition:.18s;
+  }
+  .photo-action:hover{background:rgba(20,35,27,.78)}
+  .photo-loading{
+    position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:10px;background:rgba(255,253,248,.84);backdrop-filter:blur(3px);font-size:10.5px;color:var(--muted);
+  }
+  .spinner{width:24px;height:24px;border:2px solid rgba(32,84,60,.18);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .photo-hint{font-size:9.5px;line-height:1.65;color:#8a938c;margin:9px 3px 0;text-align:center}
+  .form-col{min-width:0;display:flex;flex-direction:column}
+  .field-label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .weight-field{display:flex;align-items:baseline;gap:8px;border-bottom:1.5px solid var(--ink);padding:0 0 6px;transition:border-color .18s}
+  .weight-field:focus-within{border-color:var(--green-2)}
+  #weightInput{
+    min-width:0;flex:1;width:100%;border:0;background:transparent;padding:0;outline:none;
+    font-family:var(--serif);font-size:62px;line-height:1.05;letter-spacing:-.05em;font-weight:500;
+    color:var(--ink);font-variant-numeric:tabular-nums;
+  }
+  #weightInput::placeholder{color:#c5bfb1}
+  #weightInput::-webkit-outer-spin-button,#weightInput::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  #weightInput[type=number]{appearance:textfield;-moz-appearance:textfield}
+  .weight-unit{font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.08em;flex:none}
+  .field-error{font-size:10.5px;color:var(--red);margin:6px 0 0;line-height:1.4}
+  .weight-field.invalid{border-color:var(--red)}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:19px}
+  .input-field{min-width:0}
+  .input-field label{display:block;font-size:9.5px;letter-spacing:.08em;color:var(--muted);font-weight:650;margin-bottom:5px}
+  .input-control{
+    width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;
+    padding:10px 11px;font-size:12px;font-weight:550;color:var(--ink);outline:none;
+    transition:border-color .18s,box-shadow .18s,background .18s;
+  }
+  .input-control:hover{border-color:var(--line-strong)}
+  .input-control:focus{border-color:rgba(32,84,60,.55);background:var(--surface);box-shadow:0 0 0 3px rgba(32,84,60,.08)}
+  textarea.input-control{resize:vertical;min-height:66px;line-height:1.6;padding:9px 11px;display:block}
+  .auto-note{
+    display:flex;align-items:center;gap:6px;margin:11px 0 0;padding:8px 10px;
+    border-radius:8px;background:var(--green-soft);color:#3e6550;font-size:9.5px;line-height:1.5;
+  }
+  .auto-note .icon{width:12px;height:12px;flex:none;opacity:.8}
+  .auto-note strong{font-weight:650;font-variant-numeric:tabular-nums}
+  .note-field{margin-top:14px}
+  .form-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:auto;padding-top:22px}
+  .form-actions .btn{padding:11px 20px;font-size:12.5px}
+
+  /* ---------- detail ---------- */
+  .detail-sheet{max-width:940px;overflow:hidden}
+  .detail-layout{display:grid;grid-template-columns:1.02fr .98fr;min-height:540px}
+  .detail-photo{position:relative;background:linear-gradient(150deg,#eae6da,#ddd8c9);min-height:420px;display:flex;align-items:center;justify-content:center}
+  .detail-photo img{width:100%;height:100%;max-height:78vh;object-fit:contain;display:block}
+  .detail-photo .photo-placeholder{position:absolute;inset:0}
+  .detail-info{padding:38px 36px 30px;display:flex;flex-direction:column;min-width:0}
+  .detail-info .eyebrow{margin-bottom:16px}
+  .detail-weight{display:flex;align-items:baseline;gap:8px;line-height:1}
+  #detailWeight{font-family:var(--serif);font-size:62px;line-height:.9;letter-spacing:-.05em;font-weight:500;font-variant-numeric:tabular-nums}
+  .detail-unit{font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.06em}
+  .delta-pill{
+    display:inline-flex;align-items:center;align-self:flex-start;gap:5px;margin-top:13px;padding:6px 10px;
+    border-radius:999px;background:var(--surface-2);border:1px solid var(--line);
+    color:var(--muted);font-size:10.5px;font-weight:650;
+  }
+  .delta-pill.down{background:var(--green-soft);border-color:rgba(32,84,60,.13);color:var(--green)}
+  .delta-pill.up{background:var(--amber-soft);border-color:rgba(169,104,39,.13);color:var(--amber)}
+  .detail-list{margin:24px 0 0;display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+  .detail-list > div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .detail-list dt{font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .detail-list dd{margin:0;font-size:11.5px;font-weight:600;text-align:right;line-height:1.5}
+  .detail-note{
+    margin:18px 0 0;padding:12px 14px;border-radius:11px;background:var(--surface-2);
+    font-size:11.5px;line-height:1.75;color:#536158;white-space:pre-wrap;word-break:break-word;
+  }
+  .detail-note:empty{display:none}
+  .detail-actions{display:flex;gap:8px;margin-top:auto;padding-top:25px}
+  .detail-actions .btn{flex:1;padding:11px 14px}
+  .detail-actions .btn.delete{color:var(--red);border-color:rgba(168,68,58,.18);background:rgba(168,68,58,.045)}
+  .detail-actions .btn.delete:hover{background:rgba(168,68,58,.09)}
+
+  /* ---------- confirm ---------- */
+  .confirm-sheet{max-width:420px;padding:30px 30px 24px;text-align:center;overflow:visible}
+  .confirm-icon{
+    width:48px;height:48px;border-radius:50%;margin:0 auto 15px;display:grid;place-items:center;
+    background:var(--amber-soft);color:var(--amber);font-family:var(--serif);font-size:25px;font-weight:600;
+  }
+  .confirm-icon.danger{background:rgba(168,68,58,.1);color:var(--red)}
+  .confirm-sheet h2{font-size:20px;letter-spacing:-.025em;font-weight:650;margin:0 0 7px}
+  .confirm-sheet p{font-size:11.5px;line-height:1.7;color:var(--muted);margin:0 auto;max-width:310px;white-space:pre-line}
+  .confirm-actions{display:flex;gap:8px;margin-top:23px}
+  .confirm-actions .btn{flex:1;padding:11px 14px}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:30px;z-index:300;transform:translate(-50%,18px);
+    background:#172a20;color:#f7f4e9;border:1px solid rgba(255,255,255,.09);
+    border-radius:999px;padding:11px 17px;font-size:11.5px;font-weight:550;line-height:1.4;
+    box-shadow:0 18px 40px -14px rgba(0,0,0,.5);opacity:0;pointer-events:none;
+    transition:opacity .22s ease,transform .22s ease;max-width:calc(100vw - 40px);text-align:center;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.error{background:#7b3028;border-color:rgba(255,255,255,.12)}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:1120px){
+    .content-grid{grid-template-columns:minmax(0,1fr) 325px;gap:20px}
+    .gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .hero{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px;padding:30px}
+  }
+  @media (max-width:920px){
+    .content-grid{grid-template-columns:1fr;gap:28px;margin-top:36px}
+    .compare-card{position:static;order:-1}
+    .compare-stage{aspect-ratio:16/10;max-height:420px}
+    .compare-selects{max-width:460px}
+    .compare-delta{max-width:460px}
+    .compare-note{text-align:left;max-width:460px}
+    .hero{grid-template-columns:1fr;gap:24px;padding:30px}
+    .hero-chart{min-height:220px}
+    .current-weight{font-size:clamp(72px,13vw,100px)}
+    .gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  @media (max-width:720px){
+    .topbar{padding:16px 16px 12px;gap:10px}
+    .page{padding:0 16px 42px}
+    .brand-mark{width:37px;height:37px;border-radius:12px}
+    .brand-mark .icon{width:21px;height:21px}
+    .brand-name{font-size:16px}
+    .brand-kicker{font-size:8px;margin-bottom:4px}
+    .top-actions{gap:6px}
+    .top-actions .btn.ghost{padding:9px;width:35px;height:35px}
+    .top-actions .btn.ghost .label{display:none}
+    .top-actions .btn.primary{padding:9px 13px;font-size:11.5px}
+    .hero{padding:24px 20px;border-radius:25px;gap:20px}
+    .current-line{margin:20px 0 9px}
+    .hero-sub{font-size:11.5px}
+    .hero-chips{gap:6px;margin-top:21px}
+    .stat-chip{min-width:0;flex:1;padding:8px 10px;border-radius:11px}
+    .stat-label{font-size:8.5px}
+    .stat-value{font-size:12px}
+    .hero-chart{padding:13px 11px 7px;border-radius:17px;min-height:190px}
+    .chart-wrap{min-height:175px}
+    .chart-empty{height:175px}
+    .chart-tooltip{display:none !important}
+    .section-heading h2{font-size:21px}
+    .gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:14px}
+    .entry-body{padding:10px 11px 11px}
+    .entry-date{font-size:11px}
+    .entry-upload{font-size:8.5px}
+    .compare-card{padding:15px;border-radius:20px}
+    .compare-stage{aspect-ratio:4/3}
+    .compare-range{touch-action:pan-y}
+    .footer{margin-top:34px;gap:9px;font-size:9.5px;flex-direction:column;align-items:flex-start}
+    .footer-actions{width:100%;justify-content:space-between}
+    .modal{padding:0;align-items:flex-end}
+    .sheet{max-height:92vh;border-radius:24px 24px 0 0;max-width:100%}
+    .sheet-head{padding:24px 20px 0}
+    .sheet-head h2{font-size:23px;padding-right:30px}
+    .modal-close{top:14px;right:14px;width:31px;height:31px}
+    .entry-layout{grid-template-columns:1fr;gap:20px;padding:18px 20px 26px}
+    .photo-drop{aspect-ratio:3/2}
+    .photo-empty{padding:16px}
+    .photo-col{max-width:100%}
+    #weightInput{font-size:54px}
+    .input-control,.select-wrap select{font-size:16px}
+    .form-actions{padding-top:18px}
+    .detail-sheet{max-width:100%;border-radius:24px 24px 0 0}
+    .detail-layout{grid-template-columns:1fr;min-height:0}
+    .detail-photo{min-height:260px;max-height:42vh}
+    .detail-photo img{max-height:42vh}
+    .detail-info{padding:24px 20px 24px}
+    #detailWeight{font-size:52px}
+    .detail-actions{padding-top:20px}
+    .confirm-sheet{border-radius:24px 24px 0 0;padding:28px 22px 24px;max-width:100%}
+    .toast{bottom:20px;font-size:11px}
+    html.native-app .entry-layout{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+    html.native-app .detail-info{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+    html.native-app .confirm-sheet{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+    html.native-app .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
+  }
+  @media (max-width:420px){
+    .gallery{grid-template-columns:1fr}
+    .entry-photo{aspect-ratio:5/4}
+    .top-actions .btn.primary .label{display:none}
+    .top-actions .btn.primary{padding:9px;width:35px;height:35px}
+    .stat-label{white-space:normal;line-height:1.25;min-height:20px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+  }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-logo" viewBox="0 0 24 24">
+    <path d="M12 2.8c3.8 3.5 6.3 6.7 6.3 10.1a6.3 6.3 0 0 1-12.6 0C5.7 9.5 8.2 6.3 12 2.8Z" fill="currentColor"/>
+    <path d="M8.6 13.4c2.2-.7 4.6-.7 6.8 0" fill="none" stroke="#173a2b" stroke-width="1.7" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V5m0 0 4 4m-4-4L8 9M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="8.5" cy="9" r="1.6" fill="currentColor"/><path d="m4.5 17 4.7-4.7a1.5 1.5 0 0 1 2.1 0l2.2 2.2 1.8-1.8a1.5 1.5 0 0 1 2.1 0l2.1 2.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7.5h2.4L8 5h8l1.6 2.5H20a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.4" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 3v4M16.5 3v4M3.5 9.5h17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4.5h6V7m-8.5 0 .8 12a1.8 1.8 0 0 0 1.8 1.7h5.8a1.8 1.8 0 0 0 1.8-1.7l.8-12M10 11v5.5m4-5.5v5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="m14.7 5.3 4 4M4 20l4.2-1 10.9-10.9a2.2 2.2 0 0 0 0-3.1l-.1-.1a2.2 2.2 0 0 0-3.1 0L5 15.8 4 20Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 4 4 7l3 3M4 7h13a3 3 0 0 1 3 3v1M17 20l3-3-3-3m3 3H7a3 3 0 0 1-3-3v-1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 9.5a5.2 5.2 0 0 1 8 0M12 10.2l2.4-2.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M8.5 15.2h7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 21 20H3l9-16.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9v5m0 3v.1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15.5l3.5-4 3 2.2L20 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark"><svg class="icon"><use href="#i-logo"/></svg></div>
+    <div>
+      <div class="brand-kicker">Weight Journal</div>
+      <div class="brand-name">体重时光</div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button type="button" class="btn ghost" id="importBtn" title="从备份文件恢复记录" aria-label="导入备份">
+      <svg class="icon"><use href="#i-upload"/></svg><span class="label">导入备份</span>
+    </button>
+    <button type="button" class="btn ghost" id="exportBtn" title="把全部记录和照片导出为备份文件" aria-label="导出备份">
+      <svg class="icon"><use href="#i-download"/></svg><span class="label">导出备份</span>
+    </button>
+    <button type="button" class="btn primary" data-open-entry title="记录体重" aria-label="记录体重">
+      <svg class="icon"><use href="#i-plus"/></svg><span class="label">记录体重</span>
+    </button>
+  </div>
+</div>
+
+<main class="page">
+  <div class="notice" id="storageNotice" hidden>
+    <svg class="icon"><use href="#i-alert"/></svg>
+    <span id="storageNoticeText"></span>
+  </div>
+
+  <section class="hero" aria-labelledby="heroTitle">
+    <div class="hero-copy">
+      <span class="eyebrow" id="heroTitle">我的体重轨迹</span>
+      <div class="current-line">
+        <span class="current-weight" id="currentWeight">--</span>
+        <span class="current-unit">kg</span>
+      </div>
+      <p class="hero-sub" id="heroSub">还没有记录，从今天的第一张照片开始吧。</p>
+      <div class="hero-chips" aria-label="体重概览">
+        <div class="stat-chip">
+          <span class="stat-label">较初次</span>
+          <span class="stat-value neutral" id="statTotal">--</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">较上次</span>
+          <span class="stat-value neutral" id="statLast">--</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-label">累计记录</span>
+          <span class="stat-value" id="statCount">0 次</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-chart">
+      <div class="chart-head">
+        <span class="chart-title">体重趋势</span>
+        <div class="range-switch" role="group" aria-label="趋势时间范围">
+          <button type="button" class="range-btn" data-range="30" aria-pressed="false">30天</button>
+          <button type="button" class="range-btn" data-range="90" aria-pressed="false">90天</button>
+          <button type="button" class="range-btn" data-range="all" aria-pressed="true">全部</button>
+        </div>
+      </div>
+      <div class="chart-wrap" id="chartWrap">
+        <div class="chart-empty" id="chartEmpty">
+          <svg class="icon"><use href="#i-chart"/></svg>
+          <span>记录第一笔体重后<br>这里会长出一条属于你的曲线</span>
+        </div>
+        <svg id="chartSvg" role="img" aria-label="体重趋势图" hidden></svg>
+        <div class="chart-tooltip" id="chartTooltip" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="content-grid">
+    <div class="gallery-column">
+      <div class="section-heading">
+        <div>
+          <div class="section-title-wrap">
+            <h2>照片时间线</h2>
+            <span class="count-badge" id="galleryCount">0</span>
+          </div>
+          <p class="section-sub">每一张照片，都是变化发生过的证据。</p>
+        </div>
+      </div>
+      <div class="gallery" id="gallery"></div>
+    </div>
+
+    <aside class="compare-card" aria-labelledby="compareTitle">
+      <div class="compare-head">
+        <div>
+          <h2 class="compare-title" id="compareTitle">
+            <svg class="icon"><use href="#i-swap"/></svg>前后对比
+          </h2>
+          <p class="compare-kicker">Before / After</p>
+        </div>
+        <button type="button" class="icon-btn" id="swapCompare" title="交换对比照片" aria-label="交换对比照片">
+          <svg class="icon"><use href="#i-swap"/></svg>
+        </button>
+      </div>
+      <div class="compare-stage" id="compareStage">
+        <img class="cmp-a" id="cmpImgA" alt="对比起始照片" hidden>
+        <div class="compare-placeholder" id="comparePlaceholder">
+          <svg class="icon"><use href="#i-image"/></svg>
+          <strong>留一张照片，给未来的自己</strong>
+          <span>上传两张以上照片，就能拖动查看前后变化。</span>
+        </div>
+        <div class="cmp-b" id="cmpLayerB" hidden><img id="cmpImgB" alt="对比当期照片"></div>
+        <span class="cmp-tag a" id="cmpTagA" hidden></span>
+        <span class="cmp-tag b" id="cmpTagB" hidden></span>
+        <div class="cmp-handle" id="cmpHandle" hidden><span class="handle-arrows">‹ ›</span></div>
+        <input type="range" class="compare-range" id="compareRange" min="0" max="100" value="55" aria-label="拖动对比前后照片">
+      </div>
+      <div class="compare-selects">
+        <div class="select-wrap">
+          <label for="compareA">起点</label>
+          <select id="compareA" aria-label="选择对比起点记录"></select>
+        </div>
+        <button type="button" class="icon-btn swap-btn" id="swapCompareSmall" title="交换" aria-label="交换对比记录">
+          <svg class="icon"><use href="#i-swap"/></svg>
+        </button>
+        <div class="select-wrap">
+          <label for="compareB">现在</label>
+          <select id="compareB" aria-label="选择对比当期记录"></select>
+        </div>
+      </div>
+      <div class="compare-delta">
+        <div>
+          <div class="compare-delta-label">变化</div>
+          <div id="cmpDelta">--</div>
+        </div>
+        <div class="compare-meta" id="cmpMeta">还没有可比对的记录</div>
+      </div>
+      <p class="compare-note" id="compareNote">照片仅保存在本机，不会上传到任何服务器。</p>
+    </aside>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-left">
+      <svg class="icon"><use href="#i-scale"/></svg>
+      <span>数据只保存在这台设备的浏览器里</span>
+      <span class="backup-state"><span class="backup-dot" id="backupDot"></span><span id="backupState">还没有备份过</span></span>
+    </div>
+    <div class="footer-actions">
+      <button type="button" class="text-btn" id="clearAllBtn">清空全部记录</button>
+      <span>体重时光 · 本地版</span>
+    </div>
+  </footer>
+</main>
+
+<!-- 新增 / 编辑记录 -->
+<div class="modal" id="entryModal" aria-hidden="true" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="sheet entry-sheet" role="dialog" aria-modal="true" aria-labelledby="entryTitle" tabindex="-1" data-autofocus>
+    <button type="button" class="modal-close" data-close-modal aria-label="关闭">
+      <svg class="icon"><use href="#i-close"/></svg>
+    </button>
+    <div class="sheet-head">
+      <span class="eyebrow" id="entryKicker">New Entry</span>
+      <h2 id="entryTitle">记录这一刻</h2>
+      <p>上传一张照片，填下今天的体重。日期和上传时间会自动保存。</p>
+    </div>
+    <form id="entryForm" novalidate>
+      <div class="entry-layout">
+        <div class="photo-col">
+          <input type="file" id="photoInput" accept="image/*" hidden>
+          <div class="photo-drop" id="photoDrop" role="button" tabindex="0" aria-label="选择或拖入一张照片">
+            <img id="photoPreview" alt="记录照片预览" hidden>
+            <div class="photo-empty" id="photoEmpty">
+              <div class="camera-badge"><svg class="icon"><use href="#i-camera"/></svg></div>
+              <strong>添加一张照片</strong>
+              <span>点击选择 · 拖拽进来<br>也可以按 Ctrl + V 粘贴</span>
+            </div>
+            <div class="photo-actions" id="photoActions" hidden>
+              <button type="button" class="photo-action" id="changePhotoBtn">更换照片</button>
+              <button type="button" class="photo-action" id="removePhotoBtn">移除</button>
+            </div>
+            <div class="photo-loading" id="photoLoading" hidden>
+              <span class="spinner"></span>
+              <span>正在处理照片…</span>
+            </div>
+          </div>
+          <p class="photo-hint">照片会自动压缩，以节省本地空间。<br>记录里可以不上传照片。</p>
+        </div>
+        <div class="form-col">
+          <label class="field-label" for="weightInput">当前体重</label>
+          <div class="weight-field" id="weightField">
+            <input type="number" id="weightInput" inputmode="decimal" step="0.1" min="20" max="400" placeholder="00.0" autocomplete="off" required>
+            <span class="weight-unit">kg</span>
+          </div>
+          <p class="field-error" id="weightError" role="alert" hidden></p>
+
+          <div class="field-grid">
+            <div class="input-field">
+              <label for="dateInput">记录日期</label>
+              <input type="date" class="input-control" id="dateInput" required>
+            </div>
+            <div class="input-field">
+              <label for="timeInput">记录时间</label>
+              <input type="time" class="input-control" id="timeInput" required>
+            </div>
+          </div>
+          <p class="auto-note">
+            <svg class="icon"><use href="#i-clock"/></svg>
+            <span>自动保存上传时间：<strong id="uploadStamp">--</strong></span>
+          </p>
+
+          <div class="input-field note-field">
+            <label for="noteInput">备注（可选）</label>
+            <textarea class="input-control" id="noteInput" maxlength="120" rows="2" placeholder="今天的状态、饮食或心情…"></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn ghost" data-close-modal>取消</button>
+            <button type="submit" class="btn primary" id="saveEntryBtn">保存记录</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 记录详情 -->
+<div class="modal" id="detailModal" aria-hidden="true" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="sheet detail-sheet" role="dialog" aria-modal="true" aria-labelledby="detailHeading" tabindex="-1" data-autofocus>
+    <button type="button" class="modal-close" data-close-modal aria-label="关闭">
+      <svg class="icon"><use href="#i-close"/></svg>
+    </button>
+    <div class="detail-layout">
+      <div class="detail-photo" id="detailPhoto"></div>
+      <div class="detail-info">
+        <span class="eyebrow" id="detailHeading">Entry Detail</span>
+        <div class="detail-weight">
+          <span id="detailWeight">--</span>
+          <span class="detail-unit">kg</span>
+        </div>
+        <div class="delta-pill" id="detailDelta">--</div>
+        <dl class="detail-list">
+          <div><dt>记录日期</dt><dd id="detailDate">--</dd></div>
+          <div><dt>记录时间</dt><dd id="detailTime">--</dd></div>
+          <div><dt>上传时间</dt><dd id="detailUpload">--</dd></div>
+        </dl>
+        <p class="detail-note" id="detailNote"></p>
+        <div class="detail-actions">
+          <button type="button" class="btn soft" id="detailEditBtn">
+            <svg class="icon"><use href="#i-edit"/></svg>编辑
+          </button>
+          <button type="button" class="btn delete" id="detailDeleteBtn">
+            <svg class="icon"><use href="#i-trash"/></svg>删除
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 确认 -->
+<div class="modal" id="confirmModal" aria-hidden="true" hidden>
+  <div class="modal-backdrop" data-close-modal></div>
+  <div class="sheet confirm-sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmBody" tabindex="-1" data-autofocus>
+    <div class="confirm-icon" id="confirmIcon">!</div>
+    <h2 id="confirmTitle">确认操作</h2>
+    <p id="confirmBody"></p>
+    <div class="confirm-actions">
+      <button type="button" class="btn ghost" id="confirmCancel">取消</button>
+      <button type="button" class="btn danger" id="confirmOk">确认</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importInput" accept="application/json,.json" hidden>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="native-bridge.js"></script>
+<script>
+(() => {
+  'use strict';
+
+  const DB_NAME = 'weight-time-db';
+  const DB_VERSION = 1;
+  const STORE = 'entries';
+  const LS_KEY = 'weight-time-entries-v1';
+  const LAST_EXPORT_KEY = 'weight-time-last-export';
+  const DAY = 86400000;
+
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+  const state = {
+    entries: [],
+    range: 'all',
+    compareA: null,
+    compareB: null,
+    compareAUser: false,
+    compareBUser: false,
+    split: 55,
+    editingId: null,
+    detailId: null,
+    photo: null,
+    thumb: null,
+    photoLoading: false,
+    photoToken: 0,
+    loaded: false,
+  };
+
+  const els = {
+    currentWeight: $('#currentWeight'),
+    heroSub: $('#heroSub'),
+    statTotal: $('#statTotal'),
+    statLast: $('#statLast'),
+    statCount: $('#statCount'),
+    chartSvg: $('#chartSvg'),
+    chartEmpty: $('#chartEmpty'),
+    chartWrap: $('#chartWrap'),
+    chartTooltip: $('#chartTooltip'),
+    gallery: $('#gallery'),
+    galleryCount: $('#galleryCount'),
+    compareStage: $('#compareStage'),
+    cmpImgA: $('#cmpImgA'),
+    cmpImgB: $('#cmpImgB'),
+    cmpLayerB: $('#cmpLayerB'),
+    cmpTagA: $('#cmpTagA'),
+    cmpTagB: $('#cmpTagB'),
+    cmpHandle: $('#cmpHandle'),
+    compareRange: $('#compareRange'),
+    compareA: $('#compareA'),
+    compareB: $('#compareB'),
+    comparePlaceholder: $('#comparePlaceholder'),
+    cmpDelta: $('#cmpDelta'),
+    cmpMeta: $('#cmpMeta'),
+    compareNote: $('#compareNote'),
+    entryModal: $('#entryModal'),
+    entryForm: $('#entryForm'),
+    entryTitle: $('#entryTitle'),
+    entryKicker: $('#entryKicker'),
+    weightInput: $('#weightInput'),
+    weightField: $('#weightField'),
+    weightError: $('#weightError'),
+    dateInput: $('#dateInput'),
+    timeInput: $('#timeInput'),
+    noteInput: $('#noteInput'),
+    uploadStamp: $('#uploadStamp'),
+    photoInput: $('#photoInput'),
+    photoDrop: $('#photoDrop'),
+    photoPreview: $('#photoPreview'),
+    photoEmpty: $('#photoEmpty'),
+    photoActions: $('#photoActions'),
+    photoLoading: $('#photoLoading'),
+    saveBtn: $('#saveEntryBtn'),
+    detailModal: $('#detailModal'),
+    detailPhoto: $('#detailPhoto'),
+    detailWeight: $('#detailWeight'),
+    detailDelta: $('#detailDelta'),
+    detailDate: $('#detailDate'),
+    detailTime: $('#detailTime'),
+    detailUpload: $('#detailUpload'),
+    detailNote: $('#detailNote'),
+    confirmModal: $('#confirmModal'),
+    confirmTitle: $('#confirmTitle'),
+    confirmBody: $('#confirmBody'),
+    confirmIcon: $('#confirmIcon'),
+    confirmOk: $('#confirmOk'),
+    toast: $('#toast'),
+    importInput: $('#importInput'),
+    exportBtn: $('#exportBtn'),
+    backupState: $('#backupState'),
+    backupDot: $('#backupDot'),
+  };
+
+  /* ---------------- storage ---------------- */
+
+  const store = {
+    mode: 'idb',
+    db: null,
+    memory: [],
+
+    async init() {
+      try {
+        this.db = await openDatabase();
+        this.mode = 'idb';
+      } catch (err) {
+        console.warn('IndexedDB unavailable, falling back.', err);
+        try {
+          localStorage.setItem('__wt_test__', '1');
+          localStorage.removeItem('__wt_test__');
+          this.mode = 'local';
+        } catch (e) {
+          this.mode = 'memory';
+        }
+      }
+    },
+
+    async all() {
+      if (this.mode === 'idb') {
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(STORE, 'readonly');
+          const req = tx.objectStore(STORE).getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => reject(req.error);
+        });
+      }
+      if (this.mode === 'local') {
+        try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+      }
+      return this.memory.slice();
+    },
+
+    async put(entry) {
+      if (this.mode === 'idb') {
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(STORE, 'readwrite');
+          tx.objectStore(STORE).put(entry);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error || new Error('保存失败'));
+          tx.onabort = () => reject(tx.error || new Error('保存被中断'));
+        });
+      }
+      if (this.mode === 'local') {
+        const list = await this.all();
+        const index = list.findIndex(e => e.id === entry.id);
+        if (index >= 0) list[index] = entry; else list.push(entry);
+        this.writeLocal(list);
+        return;
+      }
+      const index = this.memory.findIndex(e => e.id === entry.id);
+      if (index >= 0) this.memory[index] = entry; else this.memory.push(entry);
+    },
+
+    async remove(id) {
+      if (this.mode === 'idb') {
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(STORE, 'readwrite');
+          tx.objectStore(STORE).delete(id);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+      if (this.mode === 'local') {
+        const list = (await this.all()).filter(e => e.id !== id);
+        this.writeLocal(list);
+        return;
+      }
+      this.memory = this.memory.filter(e => e.id !== id);
+    },
+
+    async clear() {
+      if (this.mode === 'idb') {
+        return new Promise((resolve, reject) => {
+          const tx = this.db.transaction(STORE, 'readwrite');
+          tx.objectStore(STORE).clear();
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+      if (this.mode === 'local') {
+        localStorage.removeItem(LS_KEY);
+        return;
+      }
+      this.memory = [];
+    },
+
+    writeLocal(list) {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(list));
+      } catch (err) {
+        throw new Error('浏览器本地空间不足，请先导出备份，或减少照片数量。');
+      }
+    },
+  };
+
+  /* A file-backed mirror in Documents protects records from WKWebView
+     storage eviction. IndexedDB remains the fast working copy. */
+  const MIRROR_FILE = 'weight-time-data.json';
+  let mirrorQueue = Promise.resolve();
+  let mirrorWarningShown = false;
+
+  function base64ToText(base64) {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new TextDecoder().decode(bytes);
+  }
+
+  async function readNativeMirror() {
+    const native = window.WeightTimeNative;
+    if (!native || !native.Filesystem) return [];
+    try {
+      const { data } = await native.Filesystem.readFile({
+        path: MIRROR_FILE,
+        directory: 'DOCUMENTS',
+        encoding: 'base64',
+      });
+      const parsed = JSON.parse(base64ToText(String(data || '')));
+      return normalizeImported(Array.isArray(parsed) ? { entries: parsed } : parsed);
+    } catch (err) {
+      console.warn('Native mirror read skipped.', err);
+      return [];
+    }
+  }
+
+  async function writeNativeMirror(entries) {
+    const native = window.WeightTimeNative;
+    if (!native || !native.Filesystem) throw new Error('系统文件存储不可用');
+    const payload = {
+      app: '体重时光',
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      entries,
+    };
+    const base64 = await blobToBase64(new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+    await native.Filesystem.writeFile({
+      path: MIRROR_FILE,
+      data: base64,
+      directory: 'DOCUMENTS',
+      encoding: 'base64',
+      recursive: true,
+    });
+  }
+
+  function mirrorEntries(entries) {
+    if (!isNativeApp()) return Promise.resolve();
+    const snapshot = entries.map(entry => ({ ...entry }));
+    mirrorQueue = mirrorQueue
+      .then(() => writeNativeMirror(snapshot))
+      .catch(err => {
+        console.warn('Native mirror write failed.', err);
+        if (!mirrorWarningShown) {
+          mirrorWarningShown = true;
+          setTimeout(() => showToast('本机镜像备份失败，请手动导出备份', 'error'), 1200);
+        }
+      });
+    return mirrorQueue;
+  }
+
+  function openDatabase() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) return reject(new Error('no indexedDB'));
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(STORE)) {
+          const objectStore = db.createObjectStore(STORE, { keyPath: 'id' });
+          objectStore.createIndex('measuredAt', 'measuredAt');
+        }
+      };
+      req.onsuccess = () => {
+        const db = req.result;
+        db.onversionchange = () => db.close();
+        resolve(db);
+      };
+      req.onerror = () => reject(req.error || new Error('数据库打开失败'));
+      req.onblocked = () => reject(new Error('数据库被占用'));
+    });
+  }
+
+  /* ---------------- helpers ---------------- */
+
+  const pad = n => String(n).padStart(2, '0');
+
+  function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[ch]));
+  }
+
+  function uid() {
+    if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    return 'e-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 9);
+  }
+
+  function toDate(value) {
+    const d = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  function fmtWeight(n) {
+    const value = Number(n);
+    return Number.isFinite(value) ? value.toFixed(1) : '--';
+  }
+
+  function fmtSigned(n, digits = 1) {
+    const value = Number(n);
+    if (!Number.isFinite(value) || Math.abs(value) < 0.05) return '0.0';
+    return (value > 0 ? '+' : '−') + Math.abs(value).toFixed(digits);
+  }
+
+  function fmtDate(value) {
+    const d = toDate(value);
+    if (!d) return '--';
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+
+  function fmtShort(value, withYear = false) {
+    const d = toDate(value);
+    if (!d) return '--';
+    return `${withYear ? d.getFullYear() + '年' : ''}${d.getMonth() + 1}月${d.getDate()}日`;
+  }
+
+  function fmtTime(value) {
+    const d = toDate(value);
+    return d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : '--';
+  }
+
+  function fmtDateTime(value) {
+    const d = toDate(value);
+    return d ? `${fmtDate(d)} ${fmtTime(d)}` : '--';
+  }
+
+  function fmtWeekday(value) {
+    const d = toDate(value);
+    return d ? ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()] : '';
+  }
+
+  function dateInputValue(d) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  function timeInputValue(d) {
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function sortAsc(list) {
+    return list.slice().sort((a, b) => {
+      const diff = new Date(a.measuredAt).getTime() - new Date(b.measuredAt).getTime();
+      if (diff !== 0) return diff;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+  }
+
+  function deltaClass(diff) {
+    if (diff < -0.049) return 'down';
+    if (diff > 0.049) return 'up';
+    return 'same';
+  }
+
+  function safePhoto(value) {
+    if (typeof value !== 'string') return null;
+    if (!/^data:image\/(?:jpeg|jpg|png|webp);base64,[a-z0-9+/=\s]+$/i.test(value)) return null;
+    if (value.length > 24 * 1024 * 1024) return null;
+    return value;
+  }
+
+  function isNativeApp() {
+    const bridge = window.WeightTimeNative;
+    if (bridge && typeof bridge.isNative === 'function' && bridge.isNative()) return true;
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || '');
+        const comma = result.indexOf(',');
+        resolve(comma >= 0 ? result.slice(comma + 1) : '');
+      };
+      reader.onerror = () => reject(reader.error || new Error('读取备份失败'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function shareNativeBackup(payload, fileName) {
+    const native = window.WeightTimeNative;
+    if (!native || !native.Filesystem || !native.Share) {
+      throw new Error('系统分享组件尚未就绪');
+    }
+    const base64 = await blobToBase64(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    await native.Filesystem.writeFile({
+      path: fileName,
+      data: base64,
+      directory: 'CACHE',
+      encoding: 'base64',
+      recursive: true,
+    });
+    const { uri } = await native.Filesystem.getUri({ path: fileName, directory: 'CACHE' });
+    await native.Share.share({
+      title: '体重时光备份',
+      text: '体重时光 · 全部记录与照片',
+      url: uri,
+      dialogTitle: '保存或分享备份',
+    });
+  }
+
+  function showToast(message, type = '') {
+    els.toast.textContent = message;
+    els.toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => {
+      els.toast.className = 'toast' + (type === 'error' ? ' error' : '');
+    }, 3200);
+  }
+
+  /* ---------------- modal management ---------------- */
+
+  const modalStack = [];
+
+  function openModal(modal) {
+    if (!modal || modalStack.includes(modal)) return;
+    modal._returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const openToken = (modal._openToken || 0) + 1;
+    modal._openToken = openToken;
+    modal._closeToken = (modal._closeToken || 0) + 1;
+    clearTimeout(modal._focusTimer);
+    modal.hidden = false;
+    modal.setAttribute('aria-hidden', 'false');
+    modalStack.push(modal);
+    document.body.classList.add('modal-open');
+    requestAnimationFrame(() => {
+      if (modal._openToken === openToken && !modal.hidden) modal.classList.add('is-open');
+    });
+    modal._focusTimer = setTimeout(() => {
+      if (modal._openToken !== openToken) return;
+      const focusTarget = modal.querySelector('[data-autofocus]') ||
+        modal.querySelector('input:not([type=hidden]):not([disabled]), textarea:not([disabled]), button:not([disabled])');
+      if (focusTarget) focusTarget.focus({ preventScroll: true });
+    }, 90);
+  }
+
+  function closeModal(modal) {
+    if (!modal) return;
+    const index = modalStack.indexOf(modal);
+    if (index >= 0) modalStack.splice(index, 1);
+    modal._openToken = (modal._openToken || 0) + 1;
+    const closeToken = (modal._closeToken || 0) + 1;
+    modal._closeToken = closeToken;
+    clearTimeout(modal._focusTimer);
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    setTimeout(() => {
+      if (modal._closeToken === closeToken && !modal.classList.contains('is-open')) modal.hidden = true;
+    }, 260);
+    if (!modalStack.length) document.body.classList.remove('modal-open');
+    if (modal._returnFocus && document.contains(modal._returnFocus)) {
+      setTimeout(() => modal._returnFocus.focus({ preventScroll: true }), 80);
+    }
+  }
+
+  function topModal() {
+    return modalStack[modalStack.length - 1] || null;
+  }
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      const modal = topModal();
+      if (modal) {
+        event.preventDefault();
+        closeModal(modal);
+      }
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const modal = topModal();
+    if (!modal) return;
+    const focusables = $$('button:not([disabled]), input:not([disabled]):not([type=hidden]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])', modal)
+      .filter(el => el.offsetParent !== null);
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const sheet = modal.querySelector('.sheet');
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === sheet || document.activeElement === modal)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
+  document.addEventListener('click', event => {
+    const closer = event.target.closest('[data-close-modal]');
+    if (closer) {
+      const modal = closer.closest('.modal');
+      if (modal) closeModal(modal);
+    }
+  });
+
+  function askConfirm({ title, body, confirmText = '确认', danger = false, onConfirm }) {
+    els.confirmTitle.textContent = title;
+    els.confirmBody.textContent = body;
+    els.confirmOk.textContent = confirmText;
+    els.confirmOk.className = 'btn ' + (danger ? 'danger' : 'primary');
+    els.confirmOk.disabled = false;
+    els.confirmIcon.className = 'confirm-icon' + (danger ? ' danger' : '');
+    els.confirmIcon.textContent = danger ? '!' : '?';
+    els.confirmOk.onclick = async () => {
+      if (els.confirmOk.disabled) return;
+      els.confirmOk.disabled = true;
+      closeModal(els.confirmModal);
+      try {
+        await onConfirm();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || '操作失败', 'error');
+      } finally {
+        els.confirmOk.disabled = false;
+      }
+    };
+    openModal(els.confirmModal);
+  }
+
+  /* ---------------- rendering ---------------- */
+
+  function renderAll() {
+    renderStats();
+    renderChart();
+    renderGallery();
+    renderCompare();
+    renderBackupState();
+  }
+
+  function renderStats() {
+    const asc = sortAsc(state.entries);
+    els.statCount.textContent = `${asc.length} 次`;
+    els.exportBtn.disabled = asc.length === 0;
+    els.exportBtn.title = asc.length ? '把全部记录和照片导出为备份文件' : '还没有可导出的记录';
+
+    if (!asc.length) {
+      els.currentWeight.textContent = '--';
+      els.heroSub.textContent = '还没有记录，从今天的第一张照片开始吧。';
+      els.statTotal.textContent = '--';
+      els.statLast.textContent = '--';
+      els.statTotal.className = 'stat-value neutral';
+      els.statLast.className = 'stat-value neutral';
+      return;
+    }
+
+    const latest = asc[asc.length - 1];
+    const first = asc[0];
+    const prev = asc.length > 1 ? asc[asc.length - 2] : null;
+
+    els.currentWeight.textContent = fmtWeight(latest.weight);
+    els.heroSub.innerHTML = `最近一次记录于 <strong>${fmtShort(latest.measuredAt, true)} · ${fmtWeekday(latest.measuredAt)} ${fmtTime(latest.measuredAt)}</strong>`;
+    els.statCount.textContent = `${asc.length} 次`;
+
+    if (asc.length > 1) {
+      const totalDiff = latest.weight - first.weight;
+      els.statTotal.textContent = `${fmtSigned(totalDiff)} kg`;
+      els.statTotal.className = 'stat-value ' + deltaClass(totalDiff);
+    } else {
+      els.statTotal.textContent = '第一次';
+      els.statTotal.className = 'stat-value neutral';
+    }
+
+    if (prev) {
+      const diff = latest.weight - prev.weight;
+      els.statLast.textContent = `${fmtSigned(diff)} kg`;
+      els.statLast.className = 'stat-value ' + deltaClass(diff);
+    } else {
+      els.statLast.textContent = '--';
+      els.statLast.className = 'stat-value neutral';
+    }
+  }
+
+  function rangeEntries() {
+    const asc = sortAsc(state.entries);
+    if (state.range === 'all') return asc;
+    const days = Number(state.range);
+    const cutoff = Date.now() - days * DAY;
+    return asc.filter(entry => new Date(entry.measuredAt).getTime() >= cutoff);
+  }
+
+  function niceStep(range) {
+    const raw = range / 3;
+    const power = Math.pow(10, Math.floor(Math.log10(raw)));
+    const candidates = [1, 2, 2.5, 5, 10].map(n => n * power);
+    return candidates.find(n => n >= raw) || 10 * power;
+  }
+
+  function smoothPath(points) {
+    if (!points.length) return '';
+    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+    let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i - 1] || points[i];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[i + 2] || p2;
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+    }
+    return d;
+  }
+
+  function renderChart() {
+    $$('.range-btn').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.range === state.range)));
+    const entries = rangeEntries();
+    els.chartTooltip.hidden = true;
+
+    if (!entries.length) {
+      els.chartSvg.setAttribute('hidden', '');
+      els.chartEmpty.hidden = false;
+      els.chartEmpty.innerHTML = state.entries.length
+        ? `<svg class="icon"><use href="#i-chart"/></svg><span>这段时间还没有记录<br>换个时间范围看看</span>`
+        : `<svg class="icon"><use href="#i-chart"/></svg><span>记录第一笔体重后<br>这里会长出一条属于你的曲线</span>`;
+      return;
+    }
+
+    els.chartEmpty.hidden = true;
+    els.chartSvg.removeAttribute('hidden');
+
+    const W = Math.max(300, Math.round(els.chartWrap.clientWidth || 640));
+    const H = W < 440 ? 212 : 240;
+    const pad = { left: 42, right: 18, top: 18, bottom: 30 };
+    const innerW = W - pad.left - pad.right;
+    const innerH = H - pad.top - pad.bottom;
+    const values = entries.map(e => Number(e.weight));
+    let lo = Math.min(...values);
+    let hi = Math.max(...values);
+    if (hi - lo < 0.2) { lo -= 0.5; hi += 0.5; }
+    const step = niceStep(hi - lo);
+    lo = Math.floor(lo / step) * step;
+    hi = Math.ceil(hi / step) * step;
+    if (hi - lo < step) hi = lo + step;
+
+    const times = entries.map(e => new Date(e.measuredAt).getTime());
+    const t0 = Math.min(...times);
+    const t1 = Math.max(...times);
+    const span = Math.max(t1 - t0, 1);
+    const single = entries.length === 1;
+    const noTimeSpread = t1 - t0 < 1000;
+    const spansYears = new Set(entries.map(e => new Date(e.measuredAt).getFullYear())).size > 1;
+
+    const xFor = (time, index) => {
+      if (single) return pad.left + innerW / 2;
+      if (noTimeSpread) return pad.left + (index / (entries.length - 1)) * innerW;
+      const ratio = (time - t0) / span;
+      return pad.left + ratio * innerW;
+    };
+    const yFor = value => pad.top + innerH - ((value - lo) / (hi - lo)) * innerH;
+
+    const points = entries.map((entry, index) => ({
+      x: xFor(times[index], index),
+      y: yFor(Number(entry.weight)),
+      entry,
+    }));
+
+    const ticks = [];
+    const tickCount = Math.round((hi - lo) / step);
+    for (let i = 0; i <= tickCount; i++) ticks.push(lo + i * step);
+
+    const grid = ticks.map(value => {
+      const y = yFor(value);
+      return `<line class="chart-grid" x1="${pad.left}" y1="${y.toFixed(2)}" x2="${W - pad.right}" y2="${y.toFixed(2)}"></line>
+        <text class="chart-axis" x="${pad.left - 9}" y="${(y + 3.5).toFixed(2)}" text-anchor="end">${value.toFixed(1)}</text>`;
+    }).join('');
+
+    const linePath = smoothPath(points);
+    const areaPath = points.length > 1
+      ? `${linePath} L ${points[points.length - 1].x.toFixed(2)} ${(pad.top + innerH).toFixed(2)} L ${points[0].x.toFixed(2)} ${(pad.top + innerH).toFixed(2)} Z`
+      : '';
+
+    const labelIndexes = new Set([0, entries.length - 1]);
+    if (entries.length > 2) labelIndexes.add(Math.floor((entries.length - 1) / 2));
+    if (entries.length > 6 && !spansYears) labelIndexes.add(Math.floor((entries.length - 1) * 0.75));
+    const chartDate = value => {
+      const d = new Date(value);
+      return spansYears ? `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}` : fmtShort(d);
+    };
+    const xLabels = [...labelIndexes].sort((a, b) => a - b).map(index => {
+      const point = points[index];
+      let anchor = 'middle';
+      if (index === 0 && !single) anchor = 'start';
+      if (index === entries.length - 1 && !single) anchor = 'end';
+      return `<text class="chart-axis" x="${point.x.toFixed(2)}" y="${H - 8}" text-anchor="${anchor}">${escapeHTML(chartDate(point.entry.measuredAt))}</text>`;
+    }).join('');
+
+    const dots = points.map((point, index) => {
+      const latest = index === points.length - 1;
+      return `<circle class="chart-dot${latest ? ' chart-dot-latest' : ''}" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="${latest ? 6 : 4.2}"></circle>
+        <circle class="chart-hit" cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="15" tabindex="0" role="button"
+          aria-label="${escapeHTML(`${fmtDate(point.entry.measuredAt)}，${fmtWeight(point.entry.weight)} 公斤`)}"
+          data-chart-id="${escapeHTML(point.entry.id)}" data-x="${point.x.toFixed(2)}" data-y="${point.y.toFixed(2)}"></circle>`;
+    }).join('');
+
+    els.chartSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    els.chartSvg.innerHTML = `
+      <defs>
+        <linearGradient id="chartArea" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#d7ef9f" stop-opacity=".26"></stop>
+          <stop offset="100%" stop-color="#d7ef9f" stop-opacity="0"></stop>
+        </linearGradient>
+      </defs>
+      ${grid}
+      ${areaPath ? `<path class="chart-area" d="${areaPath}"></path>` : ''}
+      <path class="chart-line" d="${linePath}"></path>
+      ${dots}
+      ${xLabels}
+    `;
+
+    $$('.chart-hit', els.chartSvg).forEach(circle => {
+      const entry = state.entries.find(e => e.id === circle.dataset.chartId);
+      if (!entry) return;
+      const show = () => {
+        const wrapRect = els.chartWrap.getBoundingClientRect();
+        const svgRect = els.chartSvg.getBoundingClientRect();
+        const scale = svgRect.width / W;
+        const left = (Number(circle.dataset.x) * scale) + (svgRect.left - wrapRect.left);
+        const top = (Number(circle.dataset.y) * scale) + (svgRect.top - wrapRect.top);
+        els.chartTooltip.innerHTML = `<strong>${fmtWeight(entry.weight)} kg</strong><span>${escapeHTML(fmtShort(entry.measuredAt, true))} · ${fmtTime(entry.measuredAt)}</span>`;
+        els.chartTooltip.style.left = `${Math.max(54, Math.min(wrapRect.width - 54, left))}px`;
+        els.chartTooltip.style.top = `${Math.max(42, top)}px`;
+        els.chartTooltip.hidden = false;
+      };
+      const hide = () => { els.chartTooltip.hidden = true; };
+      circle.addEventListener('mouseenter', show);
+      circle.addEventListener('mouseleave', hide);
+      circle.addEventListener('focus', show);
+      circle.addEventListener('blur', hide);
+      circle.addEventListener('click', () => openDetail(entry.id));
+      circle.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDetail(entry.id);
+        }
+      });
+    });
+  }
+
+  function renderGallery() {
+    const asc = sortAsc(state.entries);
+    const desc = asc.slice().reverse();
+    els.galleryCount.textContent = String(desc.length);
+
+    if (!desc.length) {
+      els.gallery.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><svg class="icon"><use href="#i-camera"/></svg></div>
+          <h3>从第一张照片开始</h3>
+          <p>记录体重和当下的样子，过一段时间回头看，会看见自己走过的路。</p>
+          <button type="button" class="btn primary" data-open-entry>
+            <svg class="icon"><use href="#i-plus"/></svg>记录第一笔
+          </button>
+        </div>`;
+      return;
+    }
+
+    const previous = new Map();
+    asc.forEach((entry, index) => {
+      if (index > 0) previous.set(entry.id, asc[index - 1]);
+    });
+
+    els.gallery.innerHTML = desc.map((entry, index) => {
+      const prev = previous.get(entry.id);
+      const diff = prev ? entry.weight - prev.weight : null;
+      const diffHTML = diff === null ? '' : `<span class="delta-badge ${deltaClass(diff)}">${
+        Math.abs(diff) < 0.05 ? '持平' : (diff < 0 ? '↓' : '↑') + Math.abs(diff).toFixed(1)
+      }</span>`;
+      const photo = entry.thumb || entry.photo;
+      const imageHTML = photo
+        ? `<img src="${photo}" alt="${escapeHTML(fmtDate(entry.measuredAt) + '的体重记录照片')}" loading="lazy">`
+        : `<div class="photo-placeholder"><svg class="icon"><use href="#i-image"/></svg><span>未上传照片</span></div>`;
+      const note = entry.note ? escapeHTML(entry.note) : '&nbsp;';
+      return `
+        <article class="entry-card" role="button" tabindex="0" data-entry-id="${escapeHTML(entry.id)}" style="animation-delay:${Math.min(index * 35, 210)}ms" aria-label="查看 ${escapeHTML(fmtDate(entry.measuredAt))} 的记录，${fmtWeight(entry.weight)} 公斤">
+          <div class="entry-photo">
+            ${imageHTML}
+            <div class="photo-shade"></div>
+            ${diffHTML}
+            <div class="photo-weight"><b>${fmtWeight(entry.weight)}</b><small>kg</small></div>
+            <span class="photo-date">${fmtShort(entry.measuredAt)}</span>
+          </div>
+          <div class="entry-body">
+            <div class="entry-row">
+              <span class="entry-date">${fmtShort(entry.measuredAt, true)}</span>
+              <span class="entry-time">${fmtTime(entry.measuredAt)}</span>
+            </div>
+            <p class="entry-note">${note}</p>
+            <div class="entry-upload">
+              <svg class="icon"><use href="#i-clock"/></svg>
+              <span>上传于 ${escapeHTML(fmtShort(entry.createdAt))} ${fmtTime(entry.createdAt)}</span>
+            </div>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  function renderCompare() {
+    const withPhotos = sortAsc(state.entries).filter(entry => entry.photo);
+    const ids = withPhotos.map(entry => entry.id);
+
+    if (!withPhotos.length) {
+      state.compareA = null;
+      state.compareB = null;
+      state.compareAUser = false;
+      state.compareBUser = false;
+      els.compareStage.classList.add('single');
+      els.cmpImgA.hidden = true;
+      els.cmpLayerB.hidden = true;
+      els.cmpTagA.hidden = true;
+      els.cmpTagB.hidden = true;
+      els.cmpHandle.hidden = true;
+      els.compareRange.hidden = true;
+      els.comparePlaceholder.hidden = false;
+      els.comparePlaceholder.innerHTML = `
+        <svg class="icon"><use href="#i-image"/></svg>
+        <strong>留一张照片，给未来的自己</strong>
+        <span>上传两张以上照片，就能拖动查看前后变化。</span>`;
+      els.compareA.innerHTML = '<option>暂无照片</option>';
+      els.compareB.innerHTML = '<option>暂无照片</option>';
+      els.compareA.disabled = true;
+      els.compareB.disabled = true;
+      els.cmpDelta.textContent = '--';
+      els.cmpDelta.className = 'same';
+      els.cmpMeta.textContent = '还没有可比对的记录';
+      els.compareNote.textContent = '照片仅保存在本机，不会上传到任何服务器。';
+      return;
+    }
+
+    if (!state.compareAUser || !ids.includes(state.compareA)) state.compareA = withPhotos[0].id;
+    if (!state.compareBUser || !ids.includes(state.compareB)) state.compareB = withPhotos[withPhotos.length - 1].id;
+
+    const entryA = withPhotos.find(entry => entry.id === state.compareA) || withPhotos[0];
+    const entryB = withPhotos.find(entry => entry.id === state.compareB) || withPhotos[withPhotos.length - 1];
+    const same = entryA.id === entryB.id;
+
+    const options = withPhotos.map(entry =>
+      `<option value="${escapeHTML(entry.id)}"${entry.id === state.compareA ? ' selected' : ''}>${escapeHTML(fmtShort(entry.measuredAt))} · ${fmtWeight(entry.weight)} kg</option>`
+    ).join('');
+    els.compareA.innerHTML = options;
+    els.compareB.innerHTML = options;
+    els.compareA.value = entryA.id;
+    els.compareB.value = entryB.id;
+    els.compareA.disabled = false;
+    els.compareB.disabled = false;
+
+    els.comparePlaceholder.hidden = true;
+    els.cmpImgA.hidden = false;
+    els.cmpImgA.src = entryA.photo;
+    els.cmpImgB.src = entryB.photo;
+    els.cmpTagA.hidden = false;
+    els.cmpTagA.textContent = `${fmtShort(entryA.measuredAt)} · ${fmtWeight(entryA.weight)}kg`;
+    els.cmpTagB.hidden = false;
+    els.cmpTagB.textContent = `${fmtShort(entryB.measuredAt)} · ${fmtWeight(entryB.weight)}kg`;
+    els.cmpHandle.hidden = same;
+    els.compareRange.hidden = same;
+    els.cmpLayerB.hidden = same;
+    els.compareStage.classList.toggle('single', same);
+    els.compareStage.style.setProperty('--split', `${state.split}%`);
+    els.compareRange.value = String(state.split);
+
+    const diff = entryB.weight - entryA.weight;
+    els.cmpDelta.textContent = `${fmtSigned(diff)} kg`;
+    els.cmpDelta.className = deltaClass(diff);
+    const days = Math.round(Math.abs(new Date(entryB.measuredAt) - new Date(entryA.measuredAt)) / DAY);
+    els.cmpMeta.innerHTML = same
+      ? '同一笔记录<br>再选一个时间点看看'
+      : `${days === 0 ? '同一天' : `相隔 ${days} 天`}<br>${fmtShort(entryA.measuredAt)} → ${fmtShort(entryB.measuredAt)}`;
+
+    if (withPhotos.length === 1) {
+      els.compareNote.textContent = '再记录一张照片，就能看到前后对比。';
+    } else if (same) {
+      els.compareNote.textContent = '换一条记录作为「现在」，就能看到这段时间的变化。';
+    } else {
+      els.compareNote.textContent = '拖动中间的分割线，查看两个时间点的变化。';
+    }
+  }
+
+  function renderBackupState() {
+    let last = null;
+    try { last = localStorage.getItem(LAST_EXPORT_KEY); } catch {}
+    if (last) {
+      els.backupState.textContent = `上次备份 ${fmtShort(last, true)} ${fmtTime(last)}`;
+      els.backupDot.className = 'backup-dot';
+    } else if (state.entries.length) {
+      els.backupState.textContent = '建议导出一次备份';
+      els.backupDot.className = 'backup-dot warn';
+    } else {
+      els.backupState.textContent = '还没有备份过';
+      els.backupDot.className = 'backup-dot';
+    }
+  }
+
+  /* ---------------- entry modal ---------------- */
+
+  function openEntry(id = null) {
+    const entry = id ? state.entries.find(e => e.id === id) : null;
+    state.editingId = entry ? entry.id : null;
+    state.photo = entry ? entry.photo : null;
+    state.thumb = entry ? entry.thumb : null;
+    state.photoLoading = false;
+    state.photoToken += 1;
+
+    els.entryTitle.textContent = entry ? '编辑这条记录' : '记录这一刻';
+    els.entryKicker.textContent = entry ? 'Edit Entry' : 'New Entry';
+    els.saveBtn.textContent = entry ? '保存修改' : '保存记录';
+    els.weightInput.value = entry ? fmtWeight(entry.weight) : '';
+    els.noteInput.value = entry ? (entry.note || '') : '';
+    els.weightError.hidden = true;
+    els.weightField.classList.remove('invalid');
+
+    if (entry) {
+      const measured = new Date(entry.measuredAt);
+      els.dateInput.value = dateInputValue(measured);
+      els.timeInput.value = timeInputValue(measured);
+      els.uploadStamp.textContent = fmtDateTime(entry.createdAt);
+    } else {
+      const now = new Date();
+      els.dateInput.value = dateInputValue(now);
+      els.timeInput.value = timeInputValue(now);
+      els.uploadStamp.textContent = fmtDateTime(now);
+    }
+
+    const today = new Date();
+    els.dateInput.max = dateInputValue(today);
+    setPhotoPreview(entry ? entry.photo : null);
+    setPhotoLoading(false);
+    openModal(els.entryModal);
+    if (!window.matchMedia('(max-width: 720px)').matches) {
+      setTimeout(() => els.weightInput.focus({ preventScroll: true }), 100);
+    }
+  }
+
+  function setPhotoPreview(photo) {
+    if (photo) {
+      els.photoPreview.src = photo;
+      els.photoPreview.hidden = false;
+      els.photoEmpty.hidden = true;
+      els.photoActions.hidden = false;
+      els.photoDrop.classList.add('has-photo');
+    } else {
+      els.photoPreview.removeAttribute('src');
+      els.photoPreview.hidden = true;
+      els.photoEmpty.hidden = false;
+      els.photoActions.hidden = true;
+      els.photoDrop.classList.remove('has-photo');
+    }
+  }
+
+  function setPhotoLoading(loading) {
+    state.photoLoading = loading;
+    els.photoLoading.hidden = !loading;
+    els.saveBtn.disabled = loading;
+    els.photoInput.disabled = loading;
+  }
+
+  async function handlePhotoFile(file) {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+      showToast('请选择图片文件（JPG、PNG 等）', 'error');
+      return;
+    }
+    if (file.size > 35 * 1024 * 1024) {
+      showToast('照片超过 35MB，请先压缩后再试', 'error');
+      return;
+    }
+    const token = ++state.photoToken;
+    setPhotoLoading(true);
+    try {
+      const result = await compressPhoto(file);
+      if (token !== state.photoToken) return;
+      state.photo = result.photo;
+      state.thumb = result.thumb;
+      setPhotoPreview(state.photo);
+    } catch (err) {
+      if (token !== state.photoToken) return;
+      console.error(err);
+      showToast(err.message || '照片处理失败，请换一张试试', 'error');
+    } finally {
+      if (token === state.photoToken) setPhotoLoading(false);
+    }
+  }
+
+  async function decodeImage(file) {
+    if ('createImageBitmap' in window) {
+      try {
+        return await createImageBitmap(file, { imageOrientation: 'from-image' });
+      } catch (err) {
+        // Fall through to <img> decoding for browsers that cannot bitmap this format.
+      }
+    }
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      return img;
+    } catch (err) {
+      throw new Error('无法读取这张照片，请换一张 JPG 或 PNG 图片');
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 1200);
+    }
+  }
+
+  function canvasDataURL(source, maxSize, quality) {
+    const width = source.width || source.naturalWidth;
+    const height = source.height || source.naturalHeight;
+    if (!width || !height) throw new Error('照片尺寸异常');
+    const scale = Math.min(1, maxSize / Math.max(width, height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('浏览器无法处理该照片');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', quality);
+  }
+
+  async function compressPhoto(file) {
+    const source = await decodeImage(file);
+    try {
+      const photo = canvasDataURL(source, 1500, 0.84);
+      const thumb = canvasDataURL(source, 620, 0.78);
+      return { photo, thumb };
+    } finally {
+      if (source && typeof source.close === 'function') source.close();
+    }
+  }
+
+  async function saveEntry(event) {
+    event.preventDefault();
+    if (state.photoLoading || els.saveBtn.disabled) return;
+
+    const weight = Number.parseFloat(els.weightInput.value);
+    if (!Number.isFinite(weight) || weight < 20 || weight > 400) {
+      els.weightError.textContent = '请输入 20–400 kg 之间的体重';
+      els.weightError.hidden = false;
+      els.weightField.classList.add('invalid');
+      els.weightInput.focus();
+      return;
+    }
+    els.weightError.hidden = true;
+    els.weightField.classList.remove('invalid');
+
+    if (!els.dateInput.value || !els.timeInput.value) {
+      showToast('请选择记录日期和时间', 'error');
+      return;
+    }
+
+    const measured = new Date(`${els.dateInput.value}T${els.timeInput.value}:00`);
+    if (Number.isNaN(measured.getTime())) {
+      showToast('日期或时间格式不正确', 'error');
+      return;
+    }
+    if (measured.getTime() > Date.now() + 5 * 60 * 1000) {
+      showToast('记录时间不能晚于现在', 'error');
+      return;
+    }
+
+    const existing = state.editingId ? state.entries.find(entry => entry.id === state.editingId) : null;
+    const nowIso = new Date().toISOString();
+    const entry = {
+      id: existing ? existing.id : uid(),
+      weight: Math.round(weight * 10) / 10,
+      measuredAt: measured.toISOString(),
+      note: els.noteInput.value.trim().slice(0, 120),
+      photo: state.photo || null,
+      thumb: state.thumb || state.photo || null,
+      createdAt: existing ? existing.createdAt : nowIso,
+      updatedAt: nowIso,
+    };
+
+    els.saveBtn.disabled = true;
+    try {
+      await store.put(entry);
+      if (existing) {
+        state.entries = state.entries.map(item => item.id === entry.id ? entry : item);
+      } else {
+        state.entries.push(entry);
+      }
+      void mirrorEntries(state.entries);
+      closeModal(els.entryModal);
+      renderAll();
+      showToast(existing ? '记录已更新' : '已记录，继续保持');
+    } catch (err) {
+      console.error(err);
+      const message = err && /quota|space|空间/i.test(err.message || '')
+        ? '本地存储空间不足，请先导出备份，或删掉一些旧照片。'
+        : '保存失败，请稍后再试';
+      showToast(message, 'error');
+    } finally {
+      els.saveBtn.disabled = state.photoLoading;
+    }
+  }
+
+  /* ---------------- detail ---------------- */
+
+  function openDetail(id) {
+    const entry = state.entries.find(item => item.id === id);
+    if (!entry) return;
+    state.detailId = id;
+    const asc = sortAsc(state.entries);
+    const index = asc.findIndex(item => item.id === id);
+    const prev = index > 0 ? asc[index - 1] : null;
+
+    els.detailPhoto.innerHTML = entry.photo
+      ? `<img src="${entry.photo}" alt="${escapeHTML(fmtDate(entry.measuredAt) + '的记录照片')}">`
+      : `<div class="photo-placeholder"><svg class="icon"><use href="#i-image"/></svg><span>这条记录没有照片</span></div>`;
+
+    els.detailWeight.textContent = fmtWeight(entry.weight);
+    if (prev) {
+      const diff = entry.weight - prev.weight;
+      els.detailDelta.textContent = `${fmtSigned(diff)} kg　较上次`;
+      els.detailDelta.className = 'delta-pill ' + deltaClass(diff);
+    } else {
+      els.detailDelta.textContent = '第一次记录';
+      els.detailDelta.className = 'delta-pill';
+    }
+    els.detailDate.textContent = `${fmtDate(entry.measuredAt)} · ${fmtWeekday(entry.measuredAt)}`;
+    els.detailTime.textContent = fmtTime(entry.measuredAt);
+    els.detailUpload.textContent = `${fmtDate(entry.createdAt)} ${fmtTime(entry.createdAt)}`;
+    els.detailNote.textContent = entry.note || '';
+    openModal(els.detailModal);
+  }
+
+  function deleteEntry(id, after) {
+    const entry = state.entries.find(item => item.id === id);
+    if (!entry) return;
+    askConfirm({
+      title: '删除这条记录？',
+      body: `${fmtDate(entry.measuredAt)} · ${fmtWeight(entry.weight)} kg\n照片也会一起删除，此操作无法撤销。`,
+      confirmText: '删除',
+      danger: true,
+      onConfirm: async () => {
+        await store.remove(id);
+        state.entries = state.entries.filter(item => item.id !== id);
+        if (state.compareA === id) { state.compareA = null; state.compareAUser = false; }
+        if (state.compareB === id) { state.compareB = null; state.compareBUser = false; }
+        if (state.detailId === id) closeModal(els.detailModal);
+        void mirrorEntries(state.entries);
+        renderAll();
+        showToast('记录已删除');
+        if (typeof after === 'function') after();
+      },
+    });
+  }
+
+  /* ---------------- import / export ---------------- */
+
+  async function exportBackup() {
+    if (!state.entries.length) {
+      showToast('还没有可以导出的记录', 'error');
+      return;
+    }
+    const now = new Date();
+    const payload = {
+      app: '体重时光',
+      version: 1,
+      exportedAt: now.toISOString(),
+      entries: state.entries,
+    };
+
+    if (isNativeApp()) {
+      try {
+        await shareNativeBackup(
+          payload,
+          `weight-time-backup-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.json`
+        );
+        try { localStorage.setItem(LAST_EXPORT_KEY, now.toISOString()); } catch {}
+        renderBackupState();
+        showToast('备份已生成，请在分享菜单选择「存储到文件」');
+        return;
+      } catch (err) {
+        console.warn('Native backup share failed, falling back to download.', err);
+        showToast('系统分享不可用，改为尝试下载备份', 'error');
+      }
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `体重时光备份-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    try { localStorage.setItem(LAST_EXPORT_KEY, now.toISOString()); } catch {}
+    renderBackupState();
+    showToast('备份已导出，请保存到安全的位置');
+  }
+
+  function normalizeImported(raw) {
+    if (!raw || !Array.isArray(raw.entries)) throw new Error('这个文件不是有效的体重时光备份');
+    const result = [];
+    const seen = new Set();
+    for (const item of raw.entries) {
+      if (!item || typeof item !== 'object') continue;
+      const weight = Number(item.weight);
+      const measured = toDate(item.measuredAt);
+      const created = toDate(item.createdAt) || measured;
+      if (!Number.isFinite(weight) || weight < 20 || weight > 400 || !measured || !created) continue;
+      let id = typeof item.id === 'string' && item.id ? item.id : uid();
+      while (seen.has(id)) id = uid();
+      seen.add(id);
+      const photo = safePhoto(item.photo);
+      result.push({
+        id,
+        weight: Math.round(weight * 10) / 10,
+        measuredAt: measured.toISOString(),
+        note: typeof item.note === 'string' ? item.note.slice(0, 120) : '',
+        photo,
+        thumb: safePhoto(item.thumb) || photo,
+        createdAt: created.toISOString(),
+        updatedAt: toDate(item.updatedAt)?.toISOString() || created.toISOString(),
+      });
+    }
+    return result;
+  }
+
+  async function importBackup(file) {
+    if (!file) return;
+    let raw;
+    try {
+      const text = (await file.text()).replace(/^\uFEFF/, '');
+      raw = JSON.parse(text);
+    } catch (err) {
+      showToast('文件无法读取，请选择 JSON 备份文件', 'error');
+      return;
+    }
+    let imported;
+    try {
+      imported = normalizeImported(raw);
+    } catch (err) {
+      showToast(err.message, 'error');
+      return;
+    }
+    if (!imported.length) {
+      showToast('备份里没有可导入的记录', 'error');
+      return;
+    }
+    const existingIds = new Set(state.entries.map(entry => entry.id));
+    const overwriteCount = imported.filter(entry => existingIds.has(entry.id)).length;
+    askConfirm({
+      title: '导入备份？',
+      body: `找到 ${imported.length} 条记录${overwriteCount ? `，其中 ${overwriteCount} 条会覆盖现有记录` : ''}。导入后会与当前记录合并。`,
+      confirmText: '导入',
+      onConfirm: async () => {
+        for (const entry of imported) await store.put(entry);
+        state.entries = await store.all();
+        state.compareA = null;
+        state.compareB = null;
+        state.compareAUser = false;
+        state.compareBUser = false;
+        void mirrorEntries(state.entries);
+        renderAll();
+        showToast(`已导入 ${imported.length} 条记录`);
+      },
+    });
+  }
+
+  /* ---------------- events ---------------- */
+
+  function bindEvents() {
+    document.addEventListener('click', event => {
+      const add = event.target.closest('[data-open-entry]');
+      if (add) openEntry();
+
+      const card = event.target.closest('.entry-card');
+      if (card) openDetail(card.dataset.entryId);
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const card = event.target.closest('.entry-card');
+      if (!card) return;
+      event.preventDefault();
+      openDetail(card.dataset.entryId);
+    });
+
+    $$('.range-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.range = btn.dataset.range;
+        renderChart();
+      });
+    });
+
+    els.exportBtn.addEventListener('click', exportBackup);
+    $('#importBtn').addEventListener('click', () => els.importInput.click());
+    els.importInput.addEventListener('change', () => {
+      const file = els.importInput.files && els.importInput.files[0];
+      els.importInput.value = '';
+      importBackup(file);
+    });
+
+    els.entryForm.addEventListener('submit', saveEntry);
+
+    els.photoInput.addEventListener('change', () => {
+      const file = els.photoInput.files && els.photoInput.files[0];
+      els.photoInput.value = '';
+      handlePhotoFile(file);
+    });
+
+    els.photoDrop.addEventListener('click', event => {
+      if (state.photoLoading) return;
+      if (event.target.closest('#changePhotoBtn') || event.target.closest('#removePhotoBtn')) return;
+      els.photoInput.click();
+    });
+    els.photoDrop.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        els.photoInput.click();
+      }
+    });
+    $('#changePhotoBtn').addEventListener('click', event => {
+      event.stopPropagation();
+      els.photoInput.click();
+    });
+    $('#removePhotoBtn').addEventListener('click', event => {
+      event.stopPropagation();
+      if (state.photoLoading) return;
+      state.photo = null;
+      state.thumb = null;
+      setPhotoPreview(null);
+    });
+
+    ['dragenter', 'dragover'].forEach(type => {
+      els.photoDrop.addEventListener(type, event => {
+        event.preventDefault();
+        if (!state.photoLoading) els.photoDrop.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(type => {
+      els.photoDrop.addEventListener(type, event => {
+        event.preventDefault();
+        els.photoDrop.classList.remove('dragover');
+      });
+    });
+    els.photoDrop.addEventListener('drop', event => {
+      if (state.photoLoading) return;
+      const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file) handlePhotoFile(file);
+    });
+
+    document.addEventListener('paste', event => {
+      if (!modalStack.includes(els.entryModal) || state.photoLoading) return;
+      const items = event.clipboardData && event.clipboardData.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type && item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            event.preventDefault();
+            handlePhotoFile(file);
+          }
+          break;
+        }
+      }
+    });
+
+    els.weightInput.addEventListener('input', () => {
+      els.weightError.hidden = true;
+      els.weightField.classList.remove('invalid');
+    });
+
+    els.compareA.addEventListener('change', () => {
+      state.compareA = els.compareA.value;
+      state.compareAUser = true;
+      renderCompare();
+    });
+    els.compareB.addEventListener('change', () => {
+      state.compareB = els.compareB.value;
+      state.compareBUser = true;
+      renderCompare();
+    });
+    const swap = () => {
+      if (!state.compareA || !state.compareB) return;
+      const a = state.compareA;
+      state.compareA = state.compareB;
+      state.compareB = a;
+      state.compareAUser = true;
+      state.compareBUser = true;
+      renderCompare();
+    };
+    $('#swapCompare').addEventListener('click', swap);
+    $('#swapCompareSmall').addEventListener('click', swap);
+
+    els.compareRange.addEventListener('input', () => {
+      state.split = Number(els.compareRange.value);
+      els.compareStage.style.setProperty('--split', `${state.split}%`);
+    });
+
+    $('#detailEditBtn').addEventListener('click', () => {
+      const id = state.detailId;
+      closeModal(els.detailModal);
+      setTimeout(() => openEntry(id), 120);
+    });
+    $('#detailDeleteBtn').addEventListener('click', () => deleteEntry(state.detailId));
+
+    $('#confirmCancel').addEventListener('click', () => closeModal(els.confirmModal));
+
+    $('#clearAllBtn').addEventListener('click', () => {
+      if (!state.entries.length) {
+        showToast('还没有记录可以清空');
+        return;
+      }
+      askConfirm({
+        title: '清空全部记录？',
+        body: `将删除全部 ${state.entries.length} 条记录和照片，且无法恢复。建议先导出备份。`,
+        confirmText: '全部清空',
+        danger: true,
+        onConfirm: async () => {
+          await store.clear();
+          state.entries = [];
+          state.compareA = null;
+          state.compareB = null;
+          void mirrorEntries([]);
+          renderAll();
+          showToast('全部记录已清空');
+        },
+      });
+    });
+
+    let resizeTimer = 0;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (state.loaded && state.entries.length) renderChart();
+      }, 160);
+    });
+
+    window.addEventListener('pagehide', () => {
+      if (store.db) {
+        try { store.db.close(); } catch {}
+      }
+    });
+  }
+
+  /* ---------------- init ---------------- */
+
+  async function init() {
+    if (isNativeApp()) document.documentElement.classList.add('native-app');
+    bindEvents();
+    await store.init();
+    if (store.mode !== 'idb') {
+      const notice = $('#storageNotice');
+      const text = $('#storageNoticeText');
+      notice.hidden = false;
+      if (store.mode === 'local') {
+        text.textContent = '浏览器限制了本地数据库，当前使用备用存储。照片较多时可能空间不足，建议定期导出备份。';
+      } else {
+        text.textContent = '浏览器无法保存本地数据，当前记录只在本次打开期间有效。请使用 Chrome 或 Edge 打开，并允许网站存储数据。';
+      }
+    }
+    let restoredFromMirror = false;
+    try {
+      let raw = await store.all();
+      if ((!Array.isArray(raw) || raw.length === 0) && isNativeApp()) {
+        const mirrored = await readNativeMirror();
+        if (mirrored.length) {
+          for (const entry of mirrored) {
+            try { await store.put(entry); } catch (err) { console.warn('Mirror restore write failed.', err); }
+          }
+          raw = mirrored;
+          restoredFromMirror = true;
+        }
+      }
+      state.entries = Array.isArray(raw) ? raw.filter(entry => entry && entry.id && Number.isFinite(Number(entry.weight))) : [];
+    } catch (err) {
+      console.error(err);
+      state.entries = [];
+      showToast('读取本地记录失败', 'error');
+    }
+    state.entries = state.entries.map(entry => ({
+      ...entry,
+      weight: Number(entry.weight),
+      photo: safePhoto(entry.photo),
+      thumb: safePhoto(entry.thumb) || safePhoto(entry.photo),
+    }));
+    state.loaded = true;
+    renderAll();
+    if (isNativeApp() && state.entries.length) void mirrorEntries(state.entries);
+    if (restoredFromMirror) setTimeout(() => showToast('已从本机镜像恢复记录'), 450);
+    if (navigator.storage && typeof navigator.storage.persist === 'function') {
+      navigator.storage.persist().catch(() => {});
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

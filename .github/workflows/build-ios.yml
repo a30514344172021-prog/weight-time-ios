@@ -1,0 +1,76 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weight-time-ios-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build IPA on macOS
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Select Xcode 16 if available
+        run: |
+          for candidate in \
+            /Applications/Xcode_16.4.app \
+            /Applications/Xcode_16.3.app \
+            /Applications/Xcode_16.2.app; do
+            if [ -d "$candidate" ]; then
+              sudo xcode-select -s "$candidate"
+              break
+            fi
+          done
+          xcodebuild -version
+          if ! xcodebuild -version | head -n 1 | grep -q 'Xcode 16'; then
+            echo "错误：没有找到 Xcode 16.x。Capacitor 7 的 UIKit 生命周期需要 Xcode 16；请把 runner 改为带 Xcode 16 的 macOS 镜像。"
+            exit 1
+          fi
+
+      - name: Build unsigned IPA
+        run: bash scripts/build-unsigned-ipa.sh
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WeightTime-unsigned-ipa
+          path: dist/WeightTime-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish IPA to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ios-build-${{ github.run_id }}
+          name: 体重时光 iOS Build ${{ github.run_number }}
+          body: |
+            未签名 IPA。请使用你自己的证书 / 签名工具重签后再安装。
+
+            - 包名：com.weighttime.journal
+            - 部署目标：iOS 15.0+
+            - 架构：arm64
+          files: dist/WeightTime-unsigned.ipa
+          make_latest: true
